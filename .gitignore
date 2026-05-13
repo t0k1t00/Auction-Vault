@@ -1,0 +1,7 @@
+venv/
+__pycache__/
+*.pyc
+.env
+auction.db
+helper/
+tree.py

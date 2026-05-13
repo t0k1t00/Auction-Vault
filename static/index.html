@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AuctionVault — Secure Bidding Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/jwt-decode@3.1.2/build/jwt-decode.min.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════ TOAST CONTAINER -->
+<div id="toast-container" aria-live="polite" aria-atomic="false"></div>
+
+<!-- ═══════════════════════════════════════════ NAVBAR -->
+<nav class="navbar" id="navbar">
+  <div class="navbar-inner">
+    <a class="nav-brand" href="#" aria-label="AuctionVault Home" id="nav-brand">
+      <span class="brand-icon" aria-hidden="true">◈</span>
+      <span class="brand-text">AuctionVault</span>
+    </a>
+    <div class="nav-actions" id="nav-actions">
+      <button class="btn btn-ghost" id="nav-login-btn" type="button">Login</button>
+      <button class="btn btn-primary" id="nav-register-btn" type="button">Get Started</button>
+    </div>
+    <div class="nav-user hidden" id="nav-user">
+      <button class="btn btn-ghost btn-sm" id="nav-payments-btn" type="button">Payments</button>
+      <div class="user-chip">
+        <span class="user-avatar" id="nav-avatar">A</span>
+        <div class="user-info">
+          <span class="user-name" id="nav-username">—</span>
+          <span class="user-role-badge" id="nav-role-badge">—</span>
+        </div>
+      </div>
+      <button class="btn btn-ghost btn-sm" id="logout-btn" type="button">Sign out</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════ HERO -->
+<section class="hero-section" id="hero-section">
+  <div class="hero-bg" aria-hidden="true">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div class="grid-lines"></div>
+  </div>
+  <div class="hero-content">
+    <div class="hero-badge">🔐 Cryptographically Secured Bidding</div>
+    <h1 class="hero-headline">Bid Smarter.<br><span class="gradient-text">Win Faster.</span></h1>
+    <p class="hero-sub">Real-time auction infrastructure with JWT authentication, role-based access control, and millisecond-precision countdown timers.</p>
+    <div class="hero-cta">
+      <button class="btn btn-primary btn-lg" id="hero-login-btn" type="button">Sign In</button>
+      <button class="btn btn-outline btn-lg" id="hero-register-btn" type="button">Create Account</button>
+      <button class="btn btn-ghost btn-lg" id="hero-explore-btn" type="button">Explore Auctions</button>
+      <button class="btn btn-ghost btn-lg" id="hero-sell-btn" type="button">Start Selling</button>
+    </div>
+    <div class="hero-features">
+      <div class="feature-pill">⚡ Live Bidding</div>
+      <div class="feature-pill">🔑 JWT Auth</div>
+      <div class="feature-pill">👤 Role-Based</div>
+      <div class="feature-pill">💳 Mock Checkout</div>
+    </div>
+  </div>
+  <div class="hero-visual" aria-hidden="true">
+    <div class="floating-card fc-1">
+      <div class="fc-label">Current Bid</div>
+      <div class="fc-value">$4,200</div>
+      <div class="fc-sub">+12% · 3 bids</div>
+    </div>
+    <div class="floating-card fc-2">
+      <div class="fc-label">Ending in</div>
+      <div class="fc-value mono">02:47</div>
+      <div class="fc-sub urgent">⚠ Ending soon</div>
+    </div>
+    <div class="floating-card fc-3">
+      <div class="fc-label">Winner</div>
+      <div class="fc-value">@vault_king</div>
+      <div class="fc-sub success">🏆 Auction closed</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ AUTH MODAL -->
+<div class="modal-overlay hidden" id="auth-overlay">
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
+    <button class="modal-close" id="auth-close-btn" aria-label="Close" type="button">✕</button>
+    <div class="modal-brand">
+      <span class="brand-icon sm" aria-hidden="true">◈</span>
+      <span id="auth-modal-title">AuctionVault</span>
+    </div>
+    <div class="auth-tabs" role="tablist">
+      <button class="auth-tab active" id="tab-login" role="tab" aria-selected="true" type="button">Login</button>
+      <button class="auth-tab" id="tab-register" role="tab" aria-selected="false" type="button">Register</button>
+      <div class="tab-slider" id="tab-slider"></div>
+    </div>
+
+    <div class="auth-error hidden" id="auth-error" role="alert"></div>
+
+    <div class="auth-panel" id="panel-login" role="tabpanel">
+      <form id="login-form" novalidate>
+        <div class="field-group">
+          <label class="field-label" for="login-username">Username</label>
+          <input class="field-input" type="text" id="login-username" autocomplete="username" placeholder="your_username" required>
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="login-password">Password</label>
+          <input class="field-input" type="password" id="login-password" autocomplete="current-password" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full" id="login-submit">
+          <span class="btn-text">Sign In</span>
+          <span class="btn-loader hidden" aria-hidden="true"></span>
+        </button>
+      </form>
+    </div>
+
+    <div class="auth-panel hidden" id="panel-register" role="tabpanel">
+      <form id="register-form" novalidate>
+        <div class="field-group">
+          <label class="field-label" for="reg-username">Username</label>
+          <input class="field-input" type="text" id="reg-username" autocomplete="username" placeholder="alphanumeric, dash, underscore" required>
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="reg-password">Password</label>
+          <input class="field-input" type="password" id="reg-password" autocomplete="new-password" placeholder="Min 6 characters" required>
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="reg-role">Role</label>
+          <select class="field-input field-select" id="reg-role" required>
+            <option value="">Select your role…</option>
+            <option value="Buyer">🛍 Buyer — Browse &amp; bid on auctions</option>
+            <option value="Seller">📦 Seller — List items for auction</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full" id="register-submit">
+          <span class="btn-text">Create Account</span>
+          <span class="btn-loader hidden" aria-hidden="true"></span>
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ APP DASHBOARD -->
+<main class="app-section hidden" id="app-section">
+
+  <!-- Seller Panel -->
+  <section class="panel seller-panel hidden" id="seller-panel">
+    <div class="panel-header">
+      <div>
+        <h2 class="panel-title">Launch Auction</h2>
+        <p class="panel-sub">List a new item and set your auction parameters</p>
+      </div>
+      <div class="auction-live-badge">NEW</div>
+    </div>
+    <form class="auction-form" id="add-item-form" novalidate>
+      <div class="form-grid">
+        <div class="field-group span-2">
+          <label class="field-label" for="item-title">Item Title</label>
+          <input class="field-input" type="text" id="item-title" placeholder="e.g. Vintage Rolex Submariner 1965" maxlength="100" required>
+        </div>
+        <div class="field-group span-2">
+          <label class="field-label" for="item-description">Description</label>
+          <textarea class="field-input field-textarea" id="item-description" placeholder="Describe your item in detail…" maxlength="500"></textarea>
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="item-price">Starting Price ($)</label>
+          <input class="field-input" type="number" id="item-price" placeholder="0.00" step="0.01" min="0.01" required>
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="item-duration">Duration (minutes)</label>
+          <input class="field-input" type="number" id="item-duration" placeholder="60" min="1" max="10080" value="60" required>
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="item-increment">Min. Bid Increment ($)</label>
+          <input class="field-input" type="number" id="item-increment" placeholder="1.00" step="0.01" min="0" value="1.00">
+        </div>
+        <div class="field-group launch-col">
+          <button type="submit" class="btn btn-primary btn-launch" id="launch-btn">
+            <span class="btn-text">⚡ Launch Auction</span>
+            <span class="btn-loader hidden" aria-hidden="true"></span>
+          </button>
+        </div>
+      </div>
+    </form>
+  </section>
+
+  <!-- Dashboard stats + controls -->
+  <section class="dashboard-header" id="dashboard-header">
+    <div class="stats-row">
+      <div class="stat-card"><span class="stat-val" id="stat-active-val">—</span><span class="stat-label">Active</span></div>
+      <div class="stat-card"><span class="stat-val" id="stat-closed-val">—</span><span class="stat-label">Closed</span></div>
+      <div class="stat-card"><span class="stat-val" id="stat-top-bid">—</span><span class="stat-label">Top Bid</span></div>
+      <div class="stat-card ending-soon-card"><span class="stat-val" id="stat-ending">—</span><span class="stat-label">Ending Soon</span></div>
+    </div>
+    <div class="controls-row">
+      <div class="search-wrap">
+        <span class="search-icon" aria-hidden="true">⌕</span>
+        <input class="search-input" type="search" id="search-input" placeholder="Search auctions…" aria-label="Search auctions">
+      </div>
+      <div class="filter-group" role="group" aria-label="Filter auctions">
+        <button class="filter-btn active" data-filter="all" type="button">All</button>
+        <button class="filter-btn" data-filter="active" type="button">Active</button>
+        <button class="filter-btn" data-filter="closed" type="button">Closed</button>
+      </div>
+      <select class="field-input sort-select" id="sort-select" aria-label="Sort auctions">
+        <option value="ending">Ending Soon</option>
+        <option value="price-desc">Price: High → Low</option>
+        <option value="price-asc">Price: Low → High</option>
+        <option value="newest">Newest First</option>
+      </select>
+    </div>
+  </section>
+
+  <!-- Items grid -->
+  <section class="items-section" aria-label="Auction listings">
+    <div class="items-grid" id="items-container"></div>
+  </section>
+
+  <!-- Payments History panel -->
+  <section class="panel payments-panel hidden" id="payments-panel">
+    <div class="panel-header">
+      <div>
+        <h2 class="panel-title" id="payments-title">Payment History</h2>
+        <p class="panel-sub" id="payments-sub">Your recent demo transactions</p>
+      </div>
+      <button class="btn btn-ghost btn-sm" id="payments-close-btn" type="button">Close</button>
+    </div>
+    <div id="payments-list" class="payments-list"></div>
+  </section>
+</main>
+
+<!-- ═══════════════════════════════════════════ CHECKOUT MODAL -->
+<div class="modal-overlay hidden" id="checkout-overlay">
+  <div class="modal-card checkout-card" role="dialog" aria-modal="true" aria-labelledby="checkout-title">
+    <button class="modal-close" id="checkout-close-btn" aria-label="Close" type="button">✕</button>
+    <div class="modal-brand">
+      <span class="brand-icon sm" aria-hidden="true">◈</span>
+      <span id="checkout-title">Complete Payment</span>
+    </div>
+
+    <div id="checkout-body">
+      <div class="checkout-summary">
+        <div class="checkout-row">
+          <span class="checkout-label">Item</span>
+          <span class="checkout-value" id="checkout-item-title">—</span>
+        </div>
+        <div class="checkout-row">
+          <span class="checkout-label">Winner</span>
+          <span class="checkout-value" id="checkout-winner">—</span>
+        </div>
+        <div class="checkout-row checkout-total">
+          <span class="checkout-label">Final Price</span>
+          <span class="checkout-value mono" id="checkout-amount">$—</span>
+        </div>
+      </div>
+
+      <div class="demo-notice" role="note">
+        ⚠ Demo payment only. Do not enter real card numbers, CVV, UPI PIN, or passwords.
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Payment Method</label>
+        <div class="method-grid" id="method-grid">
+          <button class="method-btn active" data-method="demo_card" type="button">
+            <span class="method-icon">💳</span><span>Demo Card</span>
+          </button>
+          <button class="method-btn" data-method="upi_demo" type="button">
+            <span class="method-icon">📱</span><span>Demo UPI</span>
+          </button>
+          <button class="method-btn" data-method="wallet_demo" type="button">
+            <span class="method-icon">👛</span><span>Demo Wallet</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="demo-name">Name on Receipt (optional)</label>
+        <input class="field-input" type="text" id="demo-name" placeholder="Demo User" maxlength="60" autocomplete="off">
+      </div>
+
+      <button class="btn btn-primary btn-full" id="pay-confirm-btn" type="button">
+        <span class="btn-text">Complete Demo Payment</span>
+        <span class="btn-loader hidden" aria-hidden="true"></span>
+      </button>
+    </div>
+
+    <div class="payment-success hidden" id="payment-success">
+      <div class="success-check" aria-hidden="true">
+        <svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="24" fill="none" stroke="currentColor" stroke-width="2"/><path d="M14 27l8 8 16-18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="success-title">Payment Successful</div>
+      <div class="success-sub" id="payment-success-sub">Demo transaction completed.</div>
+      <div class="success-ref mono" id="payment-success-ref">—</div>
+      <button class="btn btn-primary btn-full" id="payment-done-btn" type="button">Done</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
