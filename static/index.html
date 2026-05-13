@@ -1,301 +1,470 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AuctionVault — Secure Bidding Platform</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/jwt-decode@3.1.2/build/jwt-decode.min.js"></script>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AuctionVault — Secure Auction Marketplace</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-<!-- ═══════════════════════════════════════════ TOAST CONTAINER -->
-<div id="toast-container" aria-live="polite" aria-atomic="false"></div>
+<!-- ── Ambient Background ─────────────────────────────────── -->
+<div class="hero-bg" aria-hidden="true">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+  <div class="grid-lines"></div>
+</div>
 
-<!-- ═══════════════════════════════════════════ NAVBAR -->
-<nav class="navbar" id="navbar">
+<!-- ── Toast Container ───────────────────────────────────── -->
+<div id="toast-container" aria-live="polite"></div>
+
+<!-- ════════════════════════════════════════════════════════
+     NAVBAR
+════════════════════════════════════════════════════════ -->
+<nav class="navbar" id="main-navbar">
   <div class="navbar-inner">
-    <a class="nav-brand" href="#" aria-label="AuctionVault Home" id="nav-brand">
-      <span class="brand-icon" aria-hidden="true">◈</span>
+    <a href="#" class="nav-brand" id="brand-link">
+      <span class="brand-icon">⬡</span>
       <span class="brand-text">AuctionVault</span>
     </a>
-    <div class="nav-actions" id="nav-actions">
-      <button class="btn btn-ghost" id="nav-login-btn" type="button">Login</button>
-      <button class="btn btn-primary" id="nav-register-btn" type="button">Get Started</button>
+
+    <!-- Logged-out actions -->
+    <div class="nav-actions" id="nav-actions-guest">
+      <button class="btn btn-ghost btn-sm" id="nav-login-btn">Sign In</button>
+      <button class="btn btn-primary btn-sm btn-shine" id="nav-register-btn">Get Started</button>
     </div>
-    <div class="nav-user hidden" id="nav-user">
-      <button class="btn btn-ghost btn-sm" id="nav-payments-btn" type="button">Payments</button>
-      <div class="user-chip">
-        <span class="user-avatar" id="nav-avatar">A</span>
+
+    <!-- Logged-in actions -->
+    <div class="nav-user hidden" id="nav-actions-user">
+      <button class="nav-menu-toggle" id="sidebar-toggle" aria-label="Toggle sidebar">
+        <span></span><span></span><span></span>
+      </button>
+      <button class="user-chip" id="nav-profile-btn" aria-label="Open profile">
+        <div class="user-avatar" id="nav-avatar">?</div>
         <div class="user-info">
-          <span class="user-name" id="nav-username">—</span>
-          <span class="user-role-badge" id="nav-role-badge">—</span>
+          <span class="user-name" id="nav-username">User</span>
+          <span class="user-role-badge" id="nav-role">Role</span>
         </div>
-      </div>
-      <button class="btn btn-ghost btn-sm" id="logout-btn" type="button">Sign out</button>
+      </button>
     </div>
   </div>
 </nav>
 
-<!-- ═══════════════════════════════════════════ HERO -->
-<section class="hero-section" id="hero-section">
-  <div class="hero-bg" aria-hidden="true">
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-    <div class="orb orb-3"></div>
-    <div class="grid-lines"></div>
+<!-- ════════════════════════════════════════════════════════
+     SIDEBAR (logged-in only)
+════════════════════════════════════════════════════════ -->
+<aside class="sidebar hidden" id="sidebar" aria-label="Main navigation">
+  <div class="sidebar-header">
+    <span class="brand-icon">⬡</span>
+    <span class="brand-text sidebar-brand-text">AuctionVault</span>
+    <button class="sidebar-close" id="sidebar-close" aria-label="Close sidebar">✕</button>
   </div>
+
+  <nav class="sidebar-nav">
+    <a href="#" class="sidebar-item active" data-view="dashboard" id="sb-dashboard">
+      <span class="sb-icon">▦</span>
+      <span>Dashboard</span>
+    </a>
+    <a href="#" class="sidebar-item" data-view="auctions" id="sb-auctions">
+      <span class="sb-icon">◈</span>
+      <span>Auctions</span>
+    </a>
+    <a href="#" class="sidebar-item seller-only hidden" data-view="create" id="sb-create">
+      <span class="sb-icon">✦</span>
+      <span>Create Auction</span>
+    </a>
+    <a href="#" class="sidebar-item buyer-only hidden" data-view="my-bids" id="sb-my-bids">
+      <span class="sb-icon">◎</span>
+      <span>My Bids</span>
+    </a>
+    <a href="#" class="sidebar-item" id="sb-profile">
+      <span class="sb-icon">◉</span>
+      <span>Profile</span>
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="sidebar-user-mini" id="sidebar-user-mini">
+      <div class="user-avatar sidebar-avatar" id="sb-avatar">?</div>
+      <div class="user-info">
+        <span class="user-name" id="sb-username">User</span>
+        <span class="user-role-badge" id="sb-role">Role</span>
+      </div>
+    </div>
+    <button class="btn btn-ghost btn-sm btn-full sidebar-logout" id="sb-logout-btn">⏻ Logout</button>
+  </div>
+</aside>
+
+<!-- Sidebar overlay -->
+<div class="sidebar-overlay hidden" id="sidebar-overlay"></div>
+
+<!-- ════════════════════════════════════════════════════════
+     LANDING PAGE (logged-out)
+════════════════════════════════════════════════════════ -->
+<main class="hero-section" id="landing-section">
   <div class="hero-content">
-    <div class="hero-badge">🔐 Cryptographically Secured Bidding</div>
-    <h1 class="hero-headline">Bid Smarter.<br><span class="gradient-text">Win Faster.</span></h1>
-    <p class="hero-sub">Real-time auction infrastructure with JWT authentication, role-based access control, and millisecond-precision countdown timers.</p>
+    <div class="hero-badge">
+      <span>⬡</span>
+      <span>Secure · Transparent · Real-time</span>
+    </div>
+    <h1 class="hero-headline">
+      The Vault for<br />
+      <span class="gradient-text">Serious Auctions</span>
+    </h1>
+    <p class="hero-sub">
+      AuctionVault brings trust and transparency to online bidding — with live countdowns, role-based access, and instant bid history.
+    </p>
     <div class="hero-cta">
-      <button class="btn btn-primary btn-lg" id="hero-login-btn" type="button">Sign In</button>
-      <button class="btn btn-outline btn-lg" id="hero-register-btn" type="button">Create Account</button>
-      <button class="btn btn-ghost btn-lg" id="hero-explore-btn" type="button">Explore Auctions</button>
-      <button class="btn btn-ghost btn-lg" id="hero-sell-btn" type="button">Start Selling</button>
+      <button class="btn btn-primary btn-lg btn-shine" id="hero-get-started-btn">Get Started Free</button>
+      <button class="btn btn-ghost btn-lg" id="hero-sign-in-btn">Sign In →</button>
     </div>
     <div class="hero-features">
-      <div class="feature-pill">⚡ Live Bidding</div>
-      <div class="feature-pill">🔑 JWT Auth</div>
-      <div class="feature-pill">👤 Role-Based</div>
-      <div class="feature-pill">💳 Mock Checkout</div>
+      <span class="feature-pill">⚡ Live Countdowns</span>
+      <span class="feature-pill">🔐 JWT Auth</span>
+      <span class="feature-pill">👁 Bid History</span>
+      <span class="feature-pill">💳 Mock Checkout</span>
+      <span class="feature-pill">🏷 Role-based Access</span>
     </div>
   </div>
+
   <div class="hero-visual" aria-hidden="true">
     <div class="floating-card fc-1">
-      <div class="fc-label">Current Bid</div>
+      <div class="fc-label">Highest Bid</div>
       <div class="fc-value">$4,200</div>
-      <div class="fc-sub">+12% · 3 bids</div>
+      <div class="fc-sub urgent">⏱ 2m 14s left</div>
     </div>
     <div class="floating-card fc-2">
-      <div class="fc-label">Ending in</div>
-      <div class="fc-value mono">02:47</div>
-      <div class="fc-sub urgent">⚠ Ending soon</div>
+      <div class="fc-label">Active Auctions</div>
+      <div class="fc-value">47</div>
+      <div class="fc-sub success">● Live now</div>
     </div>
     <div class="floating-card fc-3">
       <div class="fc-label">Winner</div>
-      <div class="fc-value">@vault_king</div>
-      <div class="fc-sub success">🏆 Auction closed</div>
+      <div class="fc-value" style="font-size:16px">alice_b</div>
+      <div class="fc-sub success">✓ Paid</div>
     </div>
   </div>
-</section>
+</main>
 
-<!-- ═══════════════════════════════════════════ AUTH MODAL -->
-<div class="modal-overlay hidden" id="auth-overlay">
-  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
-    <button class="modal-close" id="auth-close-btn" aria-label="Close" type="button">✕</button>
+<!-- ════════════════════════════════════════════════════════
+     APP (logged-in)
+════════════════════════════════════════════════════════ -->
+<div class="app-section hidden" id="app-section">
+
+  <!-- ── DASHBOARD VIEW ─────────────────────────────────── -->
+  <section id="view-dashboard" class="app-view">
+
+    <!-- Welcome Banner -->
+    <div class="welcome-banner" id="welcome-banner">
+      <div class="welcome-bg-glow"></div>
+      <div class="welcome-content">
+        <div class="welcome-left">
+          <p class="welcome-eyebrow" id="welcome-time-greeting">Good morning</p>
+          <h2 class="welcome-name" id="welcome-username-display">User</h2>
+          <p class="welcome-sub" id="welcome-role-desc">Welcome to AuctionVault</p>
+        </div>
+        <div class="welcome-right" id="welcome-role-badge-wrap">
+          <div class="welcome-role-badge" id="welcome-role-badge">
+            <span class="wrb-icon" id="wrb-icon">◈</span>
+            <span id="wrb-label">Member</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="stats-row" id="stats-row">
+      <div class="stat-card" id="stat-active">
+        <div class="stat-icon">◈</div>
+        <div class="stat-val" id="stat-active-val">—</div>
+        <div class="stat-label">Active Auctions</div>
+      </div>
+      <div class="stat-card" id="stat-closed">
+        <div class="stat-icon">◻</div>
+        <div class="stat-val" id="stat-closed-val">—</div>
+        <div class="stat-label">Closed</div>
+      </div>
+      <div class="stat-card" id="stat-highest">
+        <div class="stat-icon mono">$</div>
+        <div class="stat-val mono" id="stat-highest-val">—</div>
+        <div class="stat-label">Highest Bid</div>
+      </div>
+      <div class="stat-card ending-soon-card" id="stat-ending">
+        <div class="stat-icon">⏱</div>
+        <div class="stat-val" id="stat-ending-val">—</div>
+        <div class="stat-label">Ending Soon</div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <h3 class="section-heading">Quick Actions</h3>
+    <div class="quick-actions-grid" id="quick-actions-grid">
+      <button class="quick-card" data-action="browse">
+        <div class="qc-icon">◈</div>
+        <div class="qc-title">Browse Auctions</div>
+        <div class="qc-sub">View all active listings</div>
+        <div class="qc-arrow">→</div>
+      </button>
+      <button class="quick-card seller-only hidden" data-action="create">
+        <div class="qc-icon">✦</div>
+        <div class="qc-title">Create Auction</div>
+        <div class="qc-sub">List a new item for bidding</div>
+        <div class="qc-arrow">→</div>
+      </button>
+      <button class="quick-card buyer-only hidden" data-action="my-bids">
+        <div class="qc-icon">◎</div>
+        <div class="qc-title">My Bids</div>
+        <div class="qc-sub">Track your active bids</div>
+        <div class="qc-arrow">→</div>
+      </button>
+      <button class="quick-card" data-action="profile">
+        <div class="qc-icon">◉</div>
+        <div class="qc-title">View Profile</div>
+        <div class="qc-sub">Account info and settings</div>
+        <div class="qc-arrow">→</div>
+      </button>
+    </div>
+
+    <!-- Recent Auctions Preview -->
+    <div class="dashboard-section-header">
+      <h3 class="section-heading">Recent Auctions</h3>
+      <button class="btn btn-ghost btn-sm" data-action="browse">View All →</button>
+    </div>
+    <div class="items-grid" id="dashboard-auctions-grid">
+      <!-- populated by JS -->
+    </div>
+
+    <!-- Role-specific tips -->
+    <div class="role-tip-card hidden seller-only" id="tip-seller">
+      <div class="tip-icon">✦</div>
+      <div class="tip-body">
+        <div class="tip-title">Seller Tips</div>
+        <div class="tip-text">Set a competitive starting price and a minimum bid increment to keep auctions lively. Auctions with clear descriptions attract more bids.</div>
+      </div>
+    </div>
+    <div class="role-tip-card hidden buyer-only" id="tip-buyer">
+      <div class="tip-icon">◎</div>
+      <div class="tip-body">
+        <div class="tip-title">Buyer Tips</div>
+        <div class="tip-text">Watch auctions ending soon for last-minute opportunities. Check bid history to understand competition before placing your bid.</div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ── AUCTIONS VIEW ─────────────────────────────────── -->
+  <section id="view-auctions" class="app-view hidden">
+
+    <!-- Seller create panel -->
+    <div class="panel seller-panel seller-only hidden" id="seller-panel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Create New Auction</div>
+          <div class="panel-sub">List your item and set auction parameters</div>
+        </div>
+        <span class="auction-live-badge">✦ SELLER</span>
+      </div>
+      <form class="auction-form" id="create-auction-form" novalidate>
+        <div class="form-grid">
+          <div class="field-group span-2">
+            <label class="field-label" for="item-title">Item Title</label>
+            <input class="field-input" id="item-title" type="text" placeholder="e.g. Vintage Rolex Submariner" maxlength="100" required autocomplete="off" />
+          </div>
+          <div class="field-group span-2">
+            <label class="field-label" for="item-desc">Description</label>
+            <textarea class="field-input field-textarea" id="item-desc" placeholder="Describe your item in detail…" maxlength="500"></textarea>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="item-price">Starting Price ($)</label>
+            <input class="field-input" id="item-price" type="number" placeholder="0.00" min="0.01" step="0.01" required />
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="item-increment">Min Bid Increment ($)</label>
+            <input class="field-input" id="item-increment" type="number" placeholder="1.00" min="0.01" step="0.01" value="1.00" required />
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="item-duration">Duration (minutes)</label>
+            <input class="field-input" id="item-duration" type="number" placeholder="60" min="1" max="10080" step="1" required />
+          </div>
+          <div class="field-group launch-col">
+            <button type="submit" class="btn btn-primary btn-launch btn-shine" id="create-auction-btn">
+              ✦ Launch Auction
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Controls -->
+    <div class="dashboard-header">
+      <div class="controls-row">
+        <div class="search-wrap">
+          <span class="search-icon mono">⌕</span>
+          <input class="search-input" id="search-input" type="search" placeholder="Search auctions…" autocomplete="off" />
+        </div>
+        <div class="filter-group" role="group" aria-label="Filter auctions">
+          <button class="filter-btn active" data-filter="all">All</button>
+          <button class="filter-btn" data-filter="active">Active</button>
+          <button class="filter-btn" data-filter="closed">Closed</button>
+        </div>
+        <select class="field-input sort-select" id="sort-select" aria-label="Sort auctions">
+          <option value="newest">Newest first</option>
+          <option value="ending">Ending soon</option>
+          <option value="price-high">Price: High</option>
+          <option value="price-low">Price: Low</option>
+        </select>
+        <button class="btn btn-outline btn-sm" id="refresh-btn">↻ Refresh</button>
+      </div>
+    </div>
+
+    <!-- Items grid -->
+    <div class="items-section">
+      <div class="items-grid" id="items-grid">
+        <!-- populated by JS -->
+      </div>
+    </div>
+
+    <!-- Seller payments panel (shown for sellers) -->
+    <div class="payments-panel seller-only hidden" id="seller-payments-panel">
+      <div class="panel-header" style="margin-bottom:16px">
+        <div class="panel-title" style="font-size:18px">Received Payments</div>
+      </div>
+      <div class="payments-list" id="seller-payments-list"></div>
+    </div>
+
+  </section>
+
+  <!-- ── MY BIDS VIEW (buyers) ─────────────────────────── -->
+  <section id="view-my-bids" class="app-view hidden">
+    <div class="dashboard-header">
+      <h2 class="panel-title">My Bids & Payments</h2>
+      <p class="panel-sub">Track auctions you've bid on and manage your payments</p>
+    </div>
+    <div class="payments-panel">
+      <div class="payments-list" id="my-payments-list"></div>
+    </div>
+    <div class="mt-24">
+      <h3 class="section-heading">Auctions I'm Winning / Won</h3>
+      <div class="items-grid" id="my-bids-grid">
+        <!-- populated by JS -->
+      </div>
+    </div>
+  </section>
+
+</div><!-- /app-section -->
+
+<!-- ════════════════════════════════════════════════════════
+     AUTH MODAL
+════════════════════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="auth-modal" role="dialog" aria-modal="true" aria-label="Authentication">
+  <div class="modal-card">
+    <button class="modal-close" id="auth-modal-close" aria-label="Close">✕</button>
     <div class="modal-brand">
-      <span class="brand-icon sm" aria-hidden="true">◈</span>
-      <span id="auth-modal-title">AuctionVault</span>
+      <span class="brand-icon sm">⬡</span> AuctionVault
     </div>
+
     <div class="auth-tabs" role="tablist">
-      <button class="auth-tab active" id="tab-login" role="tab" aria-selected="true" type="button">Login</button>
-      <button class="auth-tab" id="tab-register" role="tab" aria-selected="false" type="button">Register</button>
       <div class="tab-slider" id="tab-slider"></div>
+      <button class="auth-tab active" role="tab" data-tab="login" id="tab-login">Sign In</button>
+      <button class="auth-tab" role="tab" data-tab="register" id="tab-register">Register</button>
     </div>
 
-    <div class="auth-error hidden" id="auth-error" role="alert"></div>
-
-    <div class="auth-panel" id="panel-login" role="tabpanel">
-      <form id="login-form" novalidate>
-        <div class="field-group">
-          <label class="field-label" for="login-username">Username</label>
-          <input class="field-input" type="text" id="login-username" autocomplete="username" placeholder="your_username" required>
-        </div>
-        <div class="field-group">
-          <label class="field-label" for="login-password">Password</label>
-          <input class="field-input" type="password" id="login-password" autocomplete="current-password" placeholder="••••••••" required>
-        </div>
-        <button type="submit" class="btn btn-primary btn-full" id="login-submit">
-          <span class="btn-text">Sign In</span>
-          <span class="btn-loader hidden" aria-hidden="true"></span>
-        </button>
-      </form>
+    <!-- Login -->
+    <div class="auth-panel" id="panel-login">
+      <div class="field-group">
+        <label class="field-label" for="login-username">Username</label>
+        <input class="field-input" id="login-username" type="text" placeholder="your_username" autocomplete="username" />
+      </div>
+      <div class="field-group">
+        <label class="field-label" for="login-password">Password</label>
+        <input class="field-input" id="login-password" type="password" placeholder="••••••••" autocomplete="current-password" />
+      </div>
+      <div class="auth-error hidden" id="login-error" role="alert"></div>
+      <button class="btn btn-primary btn-full btn-shine" id="login-btn">Sign In</button>
     </div>
 
-    <div class="auth-panel hidden" id="panel-register" role="tabpanel">
-      <form id="register-form" novalidate>
-        <div class="field-group">
-          <label class="field-label" for="reg-username">Username</label>
-          <input class="field-input" type="text" id="reg-username" autocomplete="username" placeholder="alphanumeric, dash, underscore" required>
-        </div>
-        <div class="field-group">
-          <label class="field-label" for="reg-password">Password</label>
-          <input class="field-input" type="password" id="reg-password" autocomplete="new-password" placeholder="Min 6 characters" required>
-        </div>
-        <div class="field-group">
-          <label class="field-label" for="reg-role">Role</label>
-          <select class="field-input field-select" id="reg-role" required>
-            <option value="">Select your role…</option>
-            <option value="Buyer">🛍 Buyer — Browse &amp; bid on auctions</option>
-            <option value="Seller">📦 Seller — List items for auction</option>
-          </select>
-        </div>
-        <button type="submit" class="btn btn-primary btn-full" id="register-submit">
-          <span class="btn-text">Create Account</span>
-          <span class="btn-loader hidden" aria-hidden="true"></span>
-        </button>
-      </form>
+    <!-- Register -->
+    <div class="auth-panel hidden" id="panel-register">
+      <div class="field-group">
+        <label class="field-label" for="reg-username">Username</label>
+        <input class="field-input" id="reg-username" type="text" placeholder="choose_username" autocomplete="username" />
+      </div>
+      <div class="field-group">
+        <label class="field-label" for="reg-password">Password</label>
+        <input class="field-input" id="reg-password" type="password" placeholder="••••••••" autocomplete="new-password" />
+      </div>
+      <div class="field-group">
+        <label class="field-label" for="reg-role">Account Type</label>
+        <select class="field-input field-select" id="reg-role">
+          <option value="Buyer">Buyer — Browse &amp; Bid</option>
+          <option value="Seller">Seller — List &amp; Manage</option>
+        </select>
+      </div>
+      <div class="auth-error hidden" id="reg-error" role="alert"></div>
+      <button class="btn btn-primary btn-full btn-shine" id="register-btn">Create Account</button>
     </div>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════ APP DASHBOARD -->
-<main class="app-section hidden" id="app-section">
+<!-- ════════════════════════════════════════════════════════
+     PROFILE MODAL
+════════════════════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="profile-modal" role="dialog" aria-modal="true" aria-label="User Profile">
+  <div class="modal-card profile-modal-card">
+    <button class="modal-close" id="profile-modal-close" aria-label="Close">✕</button>
 
-  <!-- Seller Panel -->
-  <section class="panel seller-panel hidden" id="seller-panel">
-    <div class="panel-header">
-      <div>
-        <h2 class="panel-title">Launch Auction</h2>
-        <p class="panel-sub">List a new item and set your auction parameters</p>
+    <!-- Profile header -->
+    <div class="profile-header">
+      <div class="profile-avatar-wrap">
+        <div class="profile-avatar" id="profile-avatar-letter">?</div>
+        <div class="profile-avatar-ring"></div>
       </div>
-      <div class="auction-live-badge">NEW</div>
-    </div>
-    <form class="auction-form" id="add-item-form" novalidate>
-      <div class="form-grid">
-        <div class="field-group span-2">
-          <label class="field-label" for="item-title">Item Title</label>
-          <input class="field-input" type="text" id="item-title" placeholder="e.g. Vintage Rolex Submariner 1965" maxlength="100" required>
-        </div>
-        <div class="field-group span-2">
-          <label class="field-label" for="item-description">Description</label>
-          <textarea class="field-input field-textarea" id="item-description" placeholder="Describe your item in detail…" maxlength="500"></textarea>
-        </div>
-        <div class="field-group">
-          <label class="field-label" for="item-price">Starting Price ($)</label>
-          <input class="field-input" type="number" id="item-price" placeholder="0.00" step="0.01" min="0.01" required>
-        </div>
-        <div class="field-group">
-          <label class="field-label" for="item-duration">Duration (minutes)</label>
-          <input class="field-input" type="number" id="item-duration" placeholder="60" min="1" max="10080" value="60" required>
-        </div>
-        <div class="field-group">
-          <label class="field-label" for="item-increment">Min. Bid Increment ($)</label>
-          <input class="field-input" type="number" id="item-increment" placeholder="1.00" step="0.01" min="0" value="1.00">
-        </div>
-        <div class="field-group launch-col">
-          <button type="submit" class="btn btn-primary btn-launch" id="launch-btn">
-            <span class="btn-text">⚡ Launch Auction</span>
-            <span class="btn-loader hidden" aria-hidden="true"></span>
-          </button>
-        </div>
+      <div class="profile-header-info">
+        <h3 class="profile-name" id="profile-name-display">Username</h3>
+        <div class="profile-role-badge" id="profile-role-badge">Role</div>
       </div>
-    </form>
-  </section>
-
-  <!-- Dashboard stats + controls -->
-  <section class="dashboard-header" id="dashboard-header">
-    <div class="stats-row">
-      <div class="stat-card"><span class="stat-val" id="stat-active-val">—</span><span class="stat-label">Active</span></div>
-      <div class="stat-card"><span class="stat-val" id="stat-closed-val">—</span><span class="stat-label">Closed</span></div>
-      <div class="stat-card"><span class="stat-val" id="stat-top-bid">—</span><span class="stat-label">Top Bid</span></div>
-      <div class="stat-card ending-soon-card"><span class="stat-val" id="stat-ending">—</span><span class="stat-label">Ending Soon</span></div>
-    </div>
-    <div class="controls-row">
-      <div class="search-wrap">
-        <span class="search-icon" aria-hidden="true">⌕</span>
-        <input class="search-input" type="search" id="search-input" placeholder="Search auctions…" aria-label="Search auctions">
-      </div>
-      <div class="filter-group" role="group" aria-label="Filter auctions">
-        <button class="filter-btn active" data-filter="all" type="button">All</button>
-        <button class="filter-btn" data-filter="active" type="button">Active</button>
-        <button class="filter-btn" data-filter="closed" type="button">Closed</button>
-      </div>
-      <select class="field-input sort-select" id="sort-select" aria-label="Sort auctions">
-        <option value="ending">Ending Soon</option>
-        <option value="price-desc">Price: High → Low</option>
-        <option value="price-asc">Price: Low → High</option>
-        <option value="newest">Newest First</option>
-      </select>
-    </div>
-  </section>
-
-  <!-- Items grid -->
-  <section class="items-section" aria-label="Auction listings">
-    <div class="items-grid" id="items-container"></div>
-  </section>
-
-  <!-- Payments History panel -->
-  <section class="panel payments-panel hidden" id="payments-panel">
-    <div class="panel-header">
-      <div>
-        <h2 class="panel-title" id="payments-title">Payment History</h2>
-        <p class="panel-sub" id="payments-sub">Your recent demo transactions</p>
-      </div>
-      <button class="btn btn-ghost btn-sm" id="payments-close-btn" type="button">Close</button>
-    </div>
-    <div id="payments-list" class="payments-list"></div>
-  </section>
-</main>
-
-<!-- ═══════════════════════════════════════════ CHECKOUT MODAL -->
-<div class="modal-overlay hidden" id="checkout-overlay">
-  <div class="modal-card checkout-card" role="dialog" aria-modal="true" aria-labelledby="checkout-title">
-    <button class="modal-close" id="checkout-close-btn" aria-label="Close" type="button">✕</button>
-    <div class="modal-brand">
-      <span class="brand-icon sm" aria-hidden="true">◈</span>
-      <span id="checkout-title">Complete Payment</span>
     </div>
 
-    <div id="checkout-body">
-      <div class="checkout-summary">
-        <div class="checkout-row">
-          <span class="checkout-label">Item</span>
-          <span class="checkout-value" id="checkout-item-title">—</span>
-        </div>
-        <div class="checkout-row">
-          <span class="checkout-label">Winner</span>
-          <span class="checkout-value" id="checkout-winner">—</span>
-        </div>
-        <div class="checkout-row checkout-total">
-          <span class="checkout-label">Final Price</span>
-          <span class="checkout-value mono" id="checkout-amount">$—</span>
-        </div>
+    <!-- Account summary -->
+    <div class="profile-summary">
+      <div class="profile-summary-row">
+        <span class="ps-label">Account Type</span>
+        <span class="ps-value" id="profile-account-type">—</span>
       </div>
-
-      <div class="demo-notice" role="note">
-        ⚠ Demo payment only. Do not enter real card numbers, CVV, UPI PIN, or passwords.
+      <div class="profile-summary-row">
+        <span class="ps-label">Session Status</span>
+        <span class="ps-value ps-active">● Active</span>
       </div>
-
-      <div class="field-group">
-        <label class="field-label">Payment Method</label>
-        <div class="method-grid" id="method-grid">
-          <button class="method-btn active" data-method="demo_card" type="button">
-            <span class="method-icon">💳</span><span>Demo Card</span>
-          </button>
-          <button class="method-btn" data-method="upi_demo" type="button">
-            <span class="method-icon">📱</span><span>Demo UPI</span>
-          </button>
-          <button class="method-btn" data-method="wallet_demo" type="button">
-            <span class="method-icon">👛</span><span>Demo Wallet</span>
-          </button>
-        </div>
+      <div class="profile-summary-row">
+        <span class="ps-label">Token</span>
+        <span class="ps-value ps-token">✓ Valid</span>
       </div>
-
-      <div class="field-group">
-        <label class="field-label" for="demo-name">Name on Receipt (optional)</label>
-        <input class="field-input" type="text" id="demo-name" placeholder="Demo User" maxlength="60" autocomplete="off">
-      </div>
-
-      <button class="btn btn-primary btn-full" id="pay-confirm-btn" type="button">
-        <span class="btn-text">Complete Demo Payment</span>
-        <span class="btn-loader hidden" aria-hidden="true"></span>
-      </button>
     </div>
 
-    <div class="payment-success hidden" id="payment-success">
-      <div class="success-check" aria-hidden="true">
-        <svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="24" fill="none" stroke="currentColor" stroke-width="2"/><path d="M14 27l8 8 16-18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </div>
-      <div class="success-title">Payment Successful</div>
-      <div class="success-sub" id="payment-success-sub">Demo transaction completed.</div>
-      <div class="success-ref mono" id="payment-success-ref">—</div>
-      <button class="btn btn-primary btn-full" id="payment-done-btn" type="button">Done</button>
+    <!-- Capabilities -->
+    <div class="profile-capabilities" id="profile-capabilities">
+      <!-- Filled by JS based on role -->
     </div>
+
+    <!-- Action buttons -->
+    <div class="profile-actions">
+      <button class="btn btn-outline btn-sm profile-action-btn" data-profile-action="dashboard">▦ Dashboard</button>
+      <button class="btn btn-outline btn-sm profile-action-btn" data-profile-action="browse">◈ Auctions</button>
+      <button class="btn btn-primary btn-sm profile-action-btn seller-only hidden" data-profile-action="create">✦ Create Auction</button>
+      <button class="btn btn-ghost btn-sm profile-action-btn" data-profile-action="logout">⏻ Logout</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     CHECKOUT MODAL
+════════════════════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="checkout-modal" role="dialog" aria-modal="true" aria-label="Checkout">
+  <div class="modal-card checkout-card">
+    <button class="modal-close" id="checkout-modal-close" aria-label="Close">✕</button>
+    <div class="modal-brand"><span class="brand-icon sm">⬡</span> Checkout</div>
+    <div id="checkout-body"><!-- populated by JS --></div>
   </div>
 </div>
 
