@@ -1,7 +1,9 @@
 venv/
+.venv/
 __pycache__/
 *.pyc
 .env
-auction.db
-helper/
-tree.py
+*.db
+*.sqlite
+*.sqlite3
+.DS_Store
