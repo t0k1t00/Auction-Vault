@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     bcrypt_rounds: int = Field(12, alias="BCRYPT_ROUNDS")
     max_login_attempts: int = Field(5, alias="MAX_LOGIN_ATTEMPTS")
     lockout_duration_minutes: int = Field(15, alias="LOCKOUT_DURATION_MINUTES")
+    encryption_key: str = Field(..., alias="ENCRYPTION_KEY")
     
     # Rate limiting
     rate_limit_requests_login: int = Field(5, alias="RATE_LIMIT_REQUESTS_LOGIN")

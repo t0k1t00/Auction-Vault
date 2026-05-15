@@ -33,6 +33,7 @@ from src.auth import (
 from src.middleware import setup_middleware
 from src.rate_limiter import limiter, rate_limit
 from src.config import get_settings
+from src.crypto import encrypt_data, decrypt_data
 
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
@@ -793,13 +794,16 @@ async def create_payment(
     amount = item.current_price
     
     # Create payment record
+
+    raw_ref = f"DEMO-{uuid.uuid4().hex[:16].upper()}"
+
     payment = Payment(
         item_id=item.id,
         payer_id=current_user.id,
         amount=amount,
         status="paid",
         method=payload.method,
-        transaction_ref=f"DEMO-{uuid.uuid4().hex[:16].upper()}",
+        transaction_ref=encrypt_data(raw_ref),
         created_at=get_utc_now(),
         paid_at=get_utc_now(),
     )
@@ -819,7 +823,7 @@ async def create_payment(
         amount=payment.amount,
         status=payment.status,
         method=payment.method,
-        transaction_ref=payment.transaction_ref,
+        transaction_ref=decrypt_data(payment.transaction_ref),
         created_at=payment.created_at,
         paid_at=payment.paid_at,
         item_title=item.title,
@@ -842,7 +846,7 @@ async def my_payments(
             amount=p.amount,
             status=p.status,
             method=p.method,
-            transaction_ref=p.transaction_ref,
+            transaction_ref=decrypt_data(p.transaction_ref),
             created_at=p.created_at,
             paid_at=p.paid_at,
             item_title=p.item.title if p.item else None,
@@ -866,7 +870,7 @@ async def seller_payments(
             amount=p.amount,
             status=p.status,
             method=p.method,
-            transaction_ref=p.transaction_ref,
+            transaction_ref=decrypt_data(p.transaction_ref),
             created_at=p.created_at,
             paid_at=p.paid_at,
             item_title=p.item.title if p.item else None,
