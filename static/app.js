@@ -41,6 +41,55 @@ function toggle(el, visible) {
   el.classList.toggle('hidden', !visible);
 }
 
+// ── Cookie helpers for refresh token ─────────────────────────
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return null;
+}
+
+function setCookie(name, value, maxAgeSeconds) {
+    document.cookie = `${name}=${value}; path=/; max-age=${maxAgeSeconds}; SameSite=Lax; ${window.location.protocol === 'https:' ? 'Secure;' : ''}`;
+}
+
+function deleteCookie(name) {
+    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+}
+
+// ── Token refresh logic ─────────────────────────────────────
+let refreshPromise = null;
+
+async function refreshAccessToken() {
+    if (refreshPromise) return refreshPromise;
+    
+    refreshPromise = (async () => {
+        try {
+            const response = await fetch('/refresh', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({}),
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                // Store access token in sessionStorage only (not localStorage)
+                sessionStorage.setItem('av_access_token', data.access_token);
+                // Refresh token is in HttpOnly cookie - secure!
+                return data.access_token;
+            }
+        } catch (e) {
+            console.error('Token refresh failed:', e);
+        } finally {
+            refreshPromise = null;
+        }
+        return null;
+    })();
+    
+    return refreshPromise;
+}
+
+
 // ── Toast ─────────────────────────────────────────────────
 function toast(msg, type = 'info', title = '') {
   const container = $('toast-container');
@@ -86,50 +135,82 @@ function isTokenValid(token) {
   return true;
 }
 
-// ── Auth storage ─────────────────────────────────────────
-function saveAuth(token, role, username) {
-  try {
-    localStorage.setItem('av_token', token);
-    localStorage.setItem('av_role', role);
-    localStorage.setItem('av_user', username);
-  } catch { /* storage blocked */ }
-  authToken = token;
-  currentUser = { username, role };
+// ── Modified saveAuth (don't store tokens in localStorage) ──
+function saveAuth(accessToken, role, username) {
+    // Store access token in sessionStorage only (cleared on tab close)
+    sessionStorage.setItem('av_access_token', accessToken);
+    sessionStorage.setItem('av_role', role);
+    sessionStorage.setItem('av_user', username);
+    
+    authToken = accessToken;
+    currentUser = { username, role };
 }
 
 function loadAuth() {
-  try {
-    const token = localStorage.getItem('av_token');
-    const role = localStorage.getItem('av_role');
-    const username = localStorage.getItem('av_user');
-    if (token && role && username && isTokenValid(token)) {
-      authToken = token;
-      currentUser = { username, role };
-      return true;
-    }
-  } catch { /* storage blocked */ }
-  return false;
+    try {
+        const token = sessionStorage.getItem('av_access_token');
+        const role = sessionStorage.getItem('av_role');
+        const username = sessionStorage.getItem('av_user');
+        
+        if (token && role && username) {
+            // Quick validation (check expiration)
+            const payload = decodeJWT(token);
+            if (payload && payload.exp && Date.now() / 1000 < payload.exp) {
+                authToken = token;
+                currentUser = { username, role };
+                return true;
+            }
+        }
+    } catch { /* storage blocked */ }
+    return false;
 }
 
 function clearAuth() {
-  try {
-    localStorage.removeItem('av_token');
-    localStorage.removeItem('av_role');
-    localStorage.removeItem('av_user');
-  } catch { /* storage blocked */ }
-  authToken = null;
-  currentUser = null;
+    sessionStorage.removeItem('av_access_token');
+    sessionStorage.removeItem('av_role');
+    sessionStorage.removeItem('av_user');
+    authToken = null;
+    currentUser = null;
 }
 
 // ── API ───────────────────────────────────────────────────
+// ── Modified apiFetch with auto-refresh ────────────────────
 async function apiFetch(path, options = {}) {
-  const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
-  if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
-  const res = await fetch(path, { ...options, headers });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw { status: res.status, detail: data.detail || 'Request failed' };
-  return data;
+    // Get token from sessionStorage (not localStorage for security)
+    let token = sessionStorage.getItem('av_access_token');
+    
+    const makeRequest = async (requestToken) => {
+        const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+        if (requestToken) headers['Authorization'] = `Bearer ${requestToken}`;
+        
+        const res = await fetch(path, { ...options, headers });
+        
+        if (res.status === 401) {
+            // Try to refresh token
+            const newToken = await refreshAccessToken();
+            if (newToken) {
+                // Retry with new token
+                const retryHeaders = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+                retryHeaders['Authorization'] = `Bearer ${newToken}`;
+                const retryRes = await fetch(path, { ...options, headers: retryHeaders });
+                const retryData = await retryRes.json().catch(() => ({}));
+                if (!retryRes.ok) throw { status: retryRes.status, detail: retryData.detail || 'Request failed' };
+                return retryData;
+            }
+            // Refresh failed, redirect to login
+            clearAuth();
+            updateUIForAuth();
+            throw { status: 401, detail: 'Session expired. Please log in again.' };
+        }
+        
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw { status: res.status, detail: data.detail || 'Request failed' };
+        return data;
+    };
+    
+    return makeRequest(token);
 }
+
 
 // ── UI State Machine ──────────────────────────────────────
 function updateUIForAuth() {
@@ -1184,9 +1265,15 @@ async function handleRegister() {
   if (btn) { btn.disabled = true; btn.textContent = 'Creating account…'; }
 
   try {
+    const normalizedRole = String(role || '').toLowerCase() === 'seller' ? 'Seller' : 'Buyer';
+
     await apiFetch('/register', {
       method: 'POST',
-      body: JSON.stringify({ username, password, role }),
+      body: JSON.stringify({
+        username,
+        password,
+        role: normalizedRole,
+      }),
     });
     // Auto-login after register
     const res = await apiFetch('/login', {
@@ -1211,16 +1298,22 @@ function showAuthError(el, msg) {
   show(el);
 }
 
-function logout() {
-  clearAuth();
-  // Stop countdowns
-  Object.values(countdownTimers).forEach(clearInterval);
-  countdownTimers = {};
-  allItems = [];
-  hide('profile-modal');
-  closeSidebar();
-  updateUIForAuth();
-  toast('Signed out successfully', 'info', 'Goodbye');
+async function logout() {
+    try {
+        await fetch('/logout', { method: 'POST' });
+    } catch (e) { /* ignore */ }
+    
+    clearAuth();
+    deleteCookie('refresh_token');
+    deleteCookie('access_token');
+    
+    Object.values(countdownTimers).forEach(clearInterval);
+    countdownTimers = {};
+    allItems = [];
+    hide('profile-modal');
+    closeSidebar();
+    updateUIForAuth();
+    toast('Signed out successfully', 'info', 'Goodbye');
 }
 
 // ── Auth Modal Tabs ───────────────────────────────────────
